@@ -4,7 +4,7 @@ export default class PreloadState {
     }
 
     preload() {
-        this.game.load.image('test', '/assets/test.png');
+        this.game.load.image('test', './assets/test.png');
     }
 
     create() {

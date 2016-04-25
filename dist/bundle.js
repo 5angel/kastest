@@ -494,7 +494,7 @@
 	    _createClass(PreloadState, [{
 	        key: 'preload',
 	        value: function preload() {
-	            this.game.load.image('test', '/assets/test.png');
+	            this.game.load.image('test', './assets/test.png');
 	        }
 	    }, {
 	        key: 'create',
