@@ -1,11 +1,11 @@
 export default class MenuState {
     create() {
-        this.game.add.sprite(0, 0, 'test');
+        this.add.sprite(0, 0, 'test');
     }
 
     update() {
-        if (this.game.input.activePointer.justPressed()) {
-            this.game.state.start('main');
+        if (this.input.activePointer.justPressed()) {
+            this.state.start('main');
         }
     }
 }

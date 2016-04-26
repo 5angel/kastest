@@ -437,7 +437,7 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	    value: true
+	        value: true
 	});
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -445,27 +445,27 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var BootState = function () {
-	    function BootState(game) {
-	        _classCallCheck(this, BootState);
-
-	        this.game = game;
-	    }
-
-	    _createClass(BootState, [{
-	        key: 'create',
-	        value: function create() {
-	            Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
-
-	            this.game.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
-	            this.game.renderer.renderSession.roundPixels = true;
-
-	            this.game.scale.setUserScale(2, 2);
-
-	            this.game.state.start('preload');
+	        function BootState() {
+	                _classCallCheck(this, BootState);
 	        }
-	    }]);
 
-	    return BootState;
+	        _createClass(BootState, [{
+	                key: 'create',
+	                value: function create() {
+	                        Phaser.Canvas.setImageRenderingCrisp(this.game.canvas);
+
+	                        this.game.renderer.renderSession.roundPixels = true;
+	                        this.scale.scaleMode = Phaser.ScaleManager.USER_SCALE;
+
+	                        this.scale.setUserScale(2, 2);
+
+	                        this.physics.startSystem(Phaser.Physics.ARCADE);
+
+	                        this.state.start('preload');
+	                }
+	        }]);
+
+	        return BootState;
 	}();
 
 	exports.default = BootState;
@@ -485,21 +485,23 @@
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var PreloadState = function () {
-	    function PreloadState(game) {
+	    function PreloadState() {
 	        _classCallCheck(this, PreloadState);
-
-	        this.game = game;
 	    }
 
 	    _createClass(PreloadState, [{
 	        key: 'preload',
 	        value: function preload() {
-	            this.game.load.image('test', './assets/test.png');
+	            this.load.image('test', './assets/images/test.png');
+
+	            this.load.image('tileset', './assets/images/tileset.png');
+
+	            this.load.tilemap('test', './assets/json/test.json', null, Phaser.Tilemap.TILED_JSON);
 	        }
 	    }, {
 	        key: 'create',
 	        value: function create() {
-	            this.game.state.start('menu');
+	            this.state.start('menu');
 	        }
 	    }]);
 
@@ -530,13 +532,13 @@
 	    _createClass(MenuState, [{
 	        key: 'create',
 	        value: function create() {
-	            this.game.add.sprite(0, 0, 'test');
+	            this.add.sprite(0, 0, 'test');
 	        }
 	    }, {
 	        key: 'update',
 	        value: function update() {
-	            if (this.game.input.activePointer.justPressed()) {
-	                this.game.state.start('main');
+	            if (this.input.activePointer.justPressed()) {
+	                this.state.start('main');
 	            }
 	        }
 	    }]);
@@ -548,9 +550,197 @@
 
 /***/ },
 /* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _actions = __webpack_require__(9);
+
+	var _actions2 = _interopRequireDefault(_actions);
+
+	var _player = __webpack_require__(11);
+
+	var _player2 = _interopRequireDefault(_player);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var MainState = function () {
+	    function MainState() {
+	        _classCallCheck(this, MainState);
+
+	        this.actions = new _actions2.default();
+	        this.player = null;
+
+	        this.actions.loadConfig({
+	            up: [87, 38],
+	            right: [68, 39],
+	            down: [83, 40],
+	            left: [65, 37]
+	        });
+	    }
+
+	    _createClass(MainState, [{
+	        key: 'create',
+	        value: function create() {
+	            this.map = this.game.add.tilemap('test');
+
+	            this.map.addTilesetImage('test', 'tileset');
+
+	            this.layers = {
+	                background: this.map.createLayer('background'),
+	                collisions: this.map.createLayer('collisions')
+	            };
+
+	            this.map.setCollisionBetween(1, 2000, true, 'collisions');
+
+	            this.layers.background.resizeWorld();
+
+	            this.input.keyboard.onDownCallback = this.actions.onKeyDown.bind(this.actions);
+	            this.input.keyboard.onUpCallback = this.actions.onKeyUp.bind(this.actions);
+
+	            this.addPlayer();
+
+	            this.player.moveDown();
+	        }
+	    }, {
+	        key: 'update',
+	        value: function update() {
+	            this.player.update();
+
+	            this.game.physics.arcade.collide(this.player.sprite, this.layers.collisions);
+	        }
+	    }, {
+	        key: 'addPlayer',
+	        value: function addPlayer() {
+	            this.player = new _player2.default(this.game);
+
+	            this.player.add(this.findByType('player', 'objects')[0]);
+	        }
+	    }, {
+	        key: 'findByType',
+	        value: function findByType(type, layer) {
+	            return this.map.objects[layer].filter(function (el) {
+	                return el.type === type;
+	            });
+	        }
+	    }]);
+
+	    return MainState;
+	}();
+
+	exports.default = MainState;
+
+
+	MainState.Defaults = {
+	    SPEED_PLAYER: 2
+	};
+
+/***/ },
+/* 9 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _helpers = __webpack_require__(10);
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var ActionsCtrl = function () {
+	    function ActionsCtrl() {
+	        _classCallCheck(this, ActionsCtrl);
+
+	        this._config = {};
+	        this._queue = [];
+	    }
+
+	    _createClass(ActionsCtrl, [{
+	        key: 'loadConfig',
+	        value: function loadConfig(config) {
+	            var _this = this;
+
+	            var _loop = function _loop(key) {
+	                if (config.hasOwnProperty(key)) {
+	                    var value = config[key];
+
+	                    if ((0, _helpers.isArray)(value)) {
+	                        value.forEach(function (v) {
+	                            return _this._config[v] = key;
+	                        });
+	                    } else {
+	                        _this._config[value] = key;
+	                    }
+	                }
+	            };
+
+	            for (var key in config) {
+	                _loop(key);
+	            }
+	        }
+	    }, {
+	        key: 'getFirst',
+	        value: function getFirst() {
+	            return this._queue[0];
+	        }
+	    }, {
+	        key: 'onKeyDown',
+	        value: function onKeyDown(e) {
+	            var action = this._config[e.keyCode] || '',
+	                index = this._queue.indexOf(action);
+
+	            if (index !== -1) {
+	                this._queue.unshift(action);
+	            }
+	        }
+	    }, {
+	        key: 'onKeyUp',
+	        value: function onKeyUp(e) {
+	            var action = this._config[e.keyCode] || '',
+	                index = this._queue.indexOf(action);
+
+	            if (index !== -1) {
+	                this._queue.splice(index, 1);
+	            }
+	        }
+	    }]);
+
+	    return ActionsCtrl;
+	}();
+
+	exports.default = ActionsCtrl;
+
+/***/ },
+/* 10 */
 /***/ function(module, exports) {
 
-	"use strict";
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.isArray = isArray;
+	function isArray(obj) {
+	    return !Array.isArray ? toString.call(obj) === '[object Array]' : Array.isArray(obj);
+	}
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
@@ -560,23 +750,62 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var MainState = function () {
-	    function MainState() {
-	        _classCallCheck(this, MainState);
+	var PlayerCtrl = function () {
+	    function PlayerCtrl(game) {
+	        _classCallCheck(this, PlayerCtrl);
+
+	        this.game = game;
+	        this.sprite = null;
+
+	        this.direction = PlayerCtrl.Direction.DOWN;
+	        this.isMoving = false;
 	    }
 
-	    _createClass(MainState, [{
-	        key: "create",
-	        value: function create() {}
+	    _createClass(PlayerCtrl, [{
+	        key: 'add',
+	        value: function add(config) {
+	            this.sprite = this.game.add.sprite(config.x, config.y, 'player');
+
+	            this.game.physics.arcade.enable(this.sprite);
+	            this.game.camera.follow(this.sprite);
+	        }
 	    }, {
-	        key: "update",
-	        value: function update() {}
+	        key: 'moveDown',
+	        value: function moveDown() {
+	            this.direction = PlayerCtrl.Direction.DOWN;
+
+	            if (!this.isMoving) {
+	                this.isMoving = true;
+	            }
+	        }
+	    }, {
+	        key: 'update',
+	        value: function update() {
+	            if (this.isMoving) {
+	                switch (this.direction) {
+	                    case PlayerCtrl.Direction.DOWN:
+	                        this.sprite.body.y++;
+	                        break;
+	                }
+	            }
+	        }
 	    }]);
 
-	    return MainState;
+	    return PlayerCtrl;
 	}();
 
-	exports.default = MainState;
+	exports.default = PlayerCtrl;
+
+
+	PlayerCtrl.Direction = {
+	    UP: 0,
+	    RIGHT: 1,
+	    DOWN: 2,
+	    LEFT: 3
+	};
+
+	PlayerCtrl.STEP = 16;
+	PlayerCtrl.SPEED = 40;
 
 /***/ }
 /******/ ]);

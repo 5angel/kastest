@@ -1,13 +1,13 @@
 export default class PreloadState {
-    constructor(game) {
-        this.game = game;
-    }
-
     preload() {
-        this.game.load.image('test', './assets/test.png');
+        this.load.image('test', './assets/images/test.png');
+
+        this.load.image('tileset', './assets/images/tileset.png');
+
+        this.load.tilemap('test', './assets/json/test.json', null, Phaser.Tilemap.TILED_JSON);
     }
 
     create() {
-        this.game.state.start('menu');
+        this.state.start('menu');
     }
 }
