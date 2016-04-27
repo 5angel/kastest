@@ -1,17 +1,8 @@
-import ActionsCtrl from './../controllers/actions';
 import PlayerCtrl  from './../controllers/player';
 
 export default class MainState {
     constructor() {
-        this.actions = new ActionsCtrl();
-        this.player  = null;
-
-        this.actions.loadConfig({
-            up:    [87, 38],
-            right: [68, 39],
-            down:  [83, 40],
-            left:  [65, 37]
-        });
+        this.player = null;
     }
 
     create() {
@@ -28,12 +19,7 @@ export default class MainState {
 
         this.layers.background.resizeWorld();
 
-        this.input.keyboard.onDownCallback = this.actions.onKeyDown.bind(this.actions);
-        this.input.keyboard.onUpCallback   = this.actions.onKeyUp.bind(this.actions);
-
         this.addPlayer();
-
-        this.player.moveDown();
     }
 
     update() {
@@ -45,7 +31,14 @@ export default class MainState {
     addPlayer() {
         this.player = new PlayerCtrl(this.game);
 
-        this.player.add(this.findByType('player', 'objects')[0]);
+        this.player.setKeyActions({
+            up:    [87, 38],
+            right: [68, 39],
+            down:  [83, 40],
+            left:  [65, 37]
+        });
+
+        this.player.addToStage(this.findByType('player', 'objects')[0]);
     }
 
     findByType(type, layer) {

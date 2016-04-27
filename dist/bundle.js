@@ -560,11 +560,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _actions = __webpack_require__(9);
-
-	var _actions2 = _interopRequireDefault(_actions);
-
-	var _player = __webpack_require__(11);
+	var _player = __webpack_require__(9);
 
 	var _player2 = _interopRequireDefault(_player);
 
@@ -576,15 +572,7 @@
 	    function MainState() {
 	        _classCallCheck(this, MainState);
 
-	        this.actions = new _actions2.default();
 	        this.player = null;
-
-	        this.actions.loadConfig({
-	            up: [87, 38],
-	            right: [68, 39],
-	            down: [83, 40],
-	            left: [65, 37]
-	        });
 	    }
 
 	    _createClass(MainState, [{
@@ -603,12 +591,7 @@
 
 	            this.layers.background.resizeWorld();
 
-	            this.input.keyboard.onDownCallback = this.actions.onKeyDown.bind(this.actions);
-	            this.input.keyboard.onUpCallback = this.actions.onKeyUp.bind(this.actions);
-
 	            this.addPlayer();
-
-	            this.player.moveDown();
 	        }
 	    }, {
 	        key: 'update',
@@ -622,7 +605,14 @@
 	        value: function addPlayer() {
 	            this.player = new _player2.default(this.game);
 
-	            this.player.add(this.findByType('player', 'objects')[0]);
+	            this.player.setKeyActions({
+	                up: [87, 38],
+	                right: [68, 39],
+	                down: [83, 40],
+	                left: [65, 37]
+	            });
+
+	            this.player.addToStage(this.findByType('player', 'objects')[0]);
 	        }
 	    }, {
 	        key: 'findByType',
@@ -659,100 +649,13 @@
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var ActionsCtrl = function () {
-	    function ActionsCtrl() {
-	        _classCallCheck(this, ActionsCtrl);
-
-	        this._config = {};
-	        this._queue = [];
-	    }
-
-	    _createClass(ActionsCtrl, [{
-	        key: 'loadConfig',
-	        value: function loadConfig(config) {
-	            var _this = this;
-
-	            var _loop = function _loop(key) {
-	                if (config.hasOwnProperty(key)) {
-	                    var value = config[key];
-
-	                    if ((0, _helpers.isArray)(value)) {
-	                        value.forEach(function (v) {
-	                            return _this._config[v] = key;
-	                        });
-	                    } else {
-	                        _this._config[value] = key;
-	                    }
-	                }
-	            };
-
-	            for (var key in config) {
-	                _loop(key);
-	            }
-	        }
-	    }, {
-	        key: 'getFirst',
-	        value: function getFirst() {
-	            return this._queue[0];
-	        }
-	    }, {
-	        key: 'onKeyDown',
-	        value: function onKeyDown(e) {
-	            var action = this._config[e.keyCode] || '',
-	                index = this._queue.indexOf(action);
-
-	            if (index !== -1) {
-	                this._queue.unshift(action);
-	            }
-	        }
-	    }, {
-	        key: 'onKeyUp',
-	        value: function onKeyUp(e) {
-	            var action = this._config[e.keyCode] || '',
-	                index = this._queue.indexOf(action);
-
-	            if (index !== -1) {
-	                this._queue.splice(index, 1);
-	            }
-	        }
-	    }]);
-
-	    return ActionsCtrl;
-	}();
-
-	exports.default = ActionsCtrl;
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.isArray = isArray;
-	function isArray(obj) {
-	    return !Array.isArray ? toString.call(obj) === '[object Array]' : Array.isArray(obj);
-	}
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
 	var PlayerCtrl = function () {
 	    function PlayerCtrl(game) {
 	        _classCallCheck(this, PlayerCtrl);
+
+	        this._steps = 0;
+	        this._actions = {};
+	        this._queue = [];
 
 	        this.game = game;
 	        this.sprite = null;
@@ -762,30 +665,96 @@
 	    }
 
 	    _createClass(PlayerCtrl, [{
-	        key: 'add',
-	        value: function add(config) {
-	            this.sprite = this.game.add.sprite(config.x, config.y, 'player');
+	        key: 'setKeyActions',
+	        value: function setKeyActions(config) {
+	            var _this = this;
+
+	            var _loop = function _loop(key) {
+	                if (config.hasOwnProperty(key)) {
+	                    var value = config[key];
+
+	                    if ((0, _helpers.isArray)(value)) {
+	                        value.forEach(function (v) {
+	                            return _this._actions[v] = key;
+	                        });
+	                    } else {
+	                        _this._actions[value] = key;
+	                    }
+	                }
+	            };
+
+	            for (var key in config) {
+	                _loop(key);
+	            }
+	        }
+	    }, {
+	        key: 'onKeyDown',
+	        value: function onKeyDown(e) {
+	            var action = this._actions[e.keyCode] || '',
+	                index = this._queue.indexOf(action);
+
+	            if (index === -1) {
+	                this._queue.unshift(action);
+	            }
+	        }
+	    }, {
+	        key: 'onKeyUp',
+	        value: function onKeyUp(e) {
+	            var action = this._actions[e.keyCode] || '',
+	                index = this._queue.indexOf(action);
+
+	            if (index !== -1) {
+	                this._queue.splice(index, 1);
+	            }
+	        }
+	    }, {
+	        key: 'addToStage',
+	        value: function addToStage(config) {
+	            this.sprite = this.game.add.sprite(config.x, config.y, 'test');
 
 	            this.game.physics.arcade.enable(this.sprite);
 	            this.game.camera.follow(this.sprite);
-	        }
-	    }, {
-	        key: 'moveDown',
-	        value: function moveDown() {
-	            this.direction = PlayerCtrl.Direction.DOWN;
 
-	            if (!this.isMoving) {
-	                this.isMoving = true;
-	            }
+	            this.game.input.keyboard.onDownCallback = this.onKeyDown.bind(this);
+	            this.game.input.keyboard.onUpCallback = this.onKeyUp.bind(this);
 	        }
 	    }, {
 	        key: 'update',
 	        value: function update() {
 	            if (this.isMoving) {
+	                this._steps++;
+
 	                switch (this.direction) {
+	                    case PlayerCtrl.Direction.UP:
+	                        this.sprite.body.y--;
+	                        break;
+	                    case PlayerCtrl.Direction.RIGHT:
+	                        this.sprite.body.x++;
+	                        break;
 	                    case PlayerCtrl.Direction.DOWN:
 	                        this.sprite.body.y++;
 	                        break;
+	                    case PlayerCtrl.Direction.LEFT:
+	                        this.sprite.body.x--;
+	                        break;
+	                }
+
+	                if (this._steps >= PlayerCtrl.STEP) {
+	                    this._steps = 0;
+
+	                    this.isMoving = false;
+	                }
+	            } else if (this._queue.length > 0) {
+	                var action = this._queue[0] || '',
+	                    direction = PlayerCtrl.Direction[action.toUpperCase()];
+
+	                if (direction !== void 0) {
+	                    this.direction = direction;
+
+	                    if (!this.isMoving) {
+	                        this.isMoving = true;
+	                        this.update();
+	                    }
 	                }
 	            }
 	        }
@@ -806,6 +775,20 @@
 
 	PlayerCtrl.STEP = 16;
 	PlayerCtrl.SPEED = 40;
+
+/***/ },
+/* 10 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.isArray = isArray;
+	function isArray(obj) {
+	    return !Array.isArray ? toString.call(obj) === '[object Array]' : Array.isArray(obj);
+	}
 
 /***/ }
 /******/ ]);
