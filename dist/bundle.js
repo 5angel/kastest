@@ -560,7 +560,9 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _player = __webpack_require__(9);
+	var _helpers = __webpack_require__(9);
+
+	var _player = __webpack_require__(10);
 
 	var _player2 = _interopRequireDefault(_player);
 
@@ -573,14 +575,59 @@
 	        _classCallCheck(this, MainState);
 
 	        this.player = null;
+	        this.objects = null;
+	        this.layers = null;
 	    }
 
 	    _createClass(MainState, [{
+	        key: '_addPlayer',
+	        value: function _addPlayer() {
+	            this.player = new _player2.default(this.game);
+
+	            this.player.setKeyActions({
+	                up: [87, 38],
+	                right: [68, 39],
+	                down: [83, 40],
+	                left: [65, 37]
+	            });
+
+	            this.player.addToStage(this._findByType('player', 'objects')[0]);
+	        }
+	    }, {
+	        key: '_createSprite',
+	        value: function _createSprite(el, group) {
+	            (0, _helpers.extend)(group.create(el.x, el.y, el.properties.sprite), el.properties);
+	        }
+	    }, {
+	        key: '_addInteractive',
+	        value: function _addInteractive() {
+	            var _this = this;
+
+	            var list = this._findByType('interactive', 'objects');
+
+	            list.forEach(function (el) {
+	                return _this._createSprite(el, _this.objects.interactive);
+	            });
+	        }
+	    }, {
+	        key: '_findByType',
+	        value: function _findByType(type, layer) {
+	            return this.map.objects[layer].filter(function (el) {
+	                return el.type === type;
+	            });
+	        }
+	    }, {
 	        key: 'create',
 	        value: function create() {
 	            this.map = this.game.add.tilemap('test');
 
 	            this.map.addTilesetImage('test', 'tileset');
+
+	            this.objects = {
+	                interactive: this.game.add.group()
+	            };
+
+	            this.objects.interactive.enableBody = true;
 
 	            this.layers = {
 	                background: this.map.createLayer('background'),
@@ -591,7 +638,8 @@
 
 	            this.layers.background.resizeWorld();
 
-	            this.addPlayer();
+	            this._addPlayer();
+	            this._addInteractive();
 	        }
 	    }, {
 	        key: 'update',
@@ -599,27 +647,6 @@
 	            this.player.update();
 
 	            this.game.physics.arcade.collide(this.player.sprite, this.layers.collisions);
-	        }
-	    }, {
-	        key: 'addPlayer',
-	        value: function addPlayer() {
-	            this.player = new _player2.default(this.game);
-
-	            this.player.setKeyActions({
-	                up: [87, 38],
-	                right: [68, 39],
-	                down: [83, 40],
-	                left: [65, 37]
-	            });
-
-	            this.player.addToStage(this.findByType('player', 'objects')[0]);
-	        }
-	    }, {
-	        key: 'findByType',
-	        value: function findByType(type, layer) {
-	            return this.map.objects[layer].filter(function (el) {
-	                return el.type === type;
-	            });
 	        }
 	    }]);
 
@@ -635,6 +662,37 @@
 
 /***/ },
 /* 9 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.isArray = isArray;
+	exports.eachOf = eachOf;
+	exports.extend = extend;
+	function isArray(obj) {
+	    return !Array.isArray ? toString.call(obj) === '[object Array]' : Array.isArray(obj);
+	}
+
+	function eachOf(obj, callback) {
+	    for (var prop in obj) {
+	        if (obj.hasOwnProperty(prop)) {
+
+	            callback(obj[prop], prop);
+	        }
+	    }
+	}
+
+	function extend(obj, from) {
+	    eachOf(from, function (v, k) {
+	        return obj[k] = v;
+	    });
+	}
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -645,7 +703,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _helpers = __webpack_require__(10);
+	var _helpers = __webpack_require__(9);
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -665,31 +723,21 @@
 	    }
 
 	    _createClass(PlayerCtrl, [{
-	        key: 'setKeyActions',
-	        value: function setKeyActions(config) {
+	        key: '_setKeyTo',
+	        value: function _setKeyTo(key, action) {
 	            var _this = this;
 
-	            var _loop = function _loop(key) {
-	                if (config.hasOwnProperty(key)) {
-	                    var value = config[key];
-
-	                    if ((0, _helpers.isArray)(value)) {
-	                        value.forEach(function (v) {
-	                            return _this._actions[v] = key;
-	                        });
-	                    } else {
-	                        _this._actions[value] = key;
-	                    }
-	                }
-	            };
-
-	            for (var key in config) {
-	                _loop(key);
+	            if ((0, _helpers.isArray)(key)) {
+	                key.forEach(function (k) {
+	                    return _this._actions[k] = action;
+	                });
+	            } else {
+	                this._actions[key] = action;
 	            }
 	        }
 	    }, {
-	        key: 'onKeyDown',
-	        value: function onKeyDown(e) {
+	        key: '_onKeyDown',
+	        value: function _onKeyDown(e) {
 	            var action = this._actions[e.keyCode] || '',
 	                index = this._queue.indexOf(action);
 
@@ -698,14 +746,19 @@
 	            }
 	        }
 	    }, {
-	        key: 'onKeyUp',
-	        value: function onKeyUp(e) {
+	        key: '_onKeyUp',
+	        value: function _onKeyUp(e) {
 	            var action = this._actions[e.keyCode] || '',
 	                index = this._queue.indexOf(action);
 
 	            if (index !== -1) {
 	                this._queue.splice(index, 1);
 	            }
+	        }
+	    }, {
+	        key: 'setKeyActions',
+	        value: function setKeyActions(config) {
+	            (0, _helpers.eachOf)(config, this._setKeyTo.bind(this));
 	        }
 	    }, {
 	        key: 'addToStage',
@@ -715,8 +768,8 @@
 	            this.game.physics.arcade.enable(this.sprite);
 	            this.game.camera.follow(this.sprite);
 
-	            this.game.input.keyboard.onDownCallback = this.onKeyDown.bind(this);
-	            this.game.input.keyboard.onUpCallback = this.onKeyUp.bind(this);
+	            this.game.input.keyboard.onDownCallback = this._onKeyDown.bind(this);
+	            this.game.input.keyboard.onUpCallback = this._onKeyUp.bind(this);
 	        }
 	    }, {
 	        key: 'update',
@@ -775,20 +828,6 @@
 
 	PlayerCtrl.STEP = 16;
 	PlayerCtrl.SPEED = 40;
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.isArray = isArray;
-	function isArray(obj) {
-	    return !Array.isArray ? toString.call(obj) === '[object Array]' : Array.isArray(obj);
-	}
 
 /***/ }
 /******/ ]);

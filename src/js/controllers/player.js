@@ -1,4 +1,4 @@
-import { isArray } from './../misc/helpers';
+import { isArray, eachOf } from './../misc/helpers';
 
 export default class PlayerCtrl {
     constructor(game) {
@@ -13,21 +13,15 @@ export default class PlayerCtrl {
         this.isMoving  = false;
     }
 
-    setKeyActions(config) {
-        for (let key in config) {
-            if (config.hasOwnProperty(key)) {
-                let value = config[key];
-
-                if (isArray(value)) {
-                    value.forEach((v) => this._actions[v] = key);
-                } else {
-                    this._actions[value] = key;
-                }
-            }
+    _setKeyTo(key, action) {
+        if (isArray(key)) {
+            key.forEach((k) => this._actions[k] = action);
+        } else {
+            this._actions[key] = action;
         }
     }
 
-    onKeyDown(e) {
+    _onKeyDown(e) {
         let action = this._actions[e.keyCode] || '',
             index  = this._queue.indexOf(action);
 
@@ -36,7 +30,7 @@ export default class PlayerCtrl {
         }
     }
 
-    onKeyUp(e) {
+    _onKeyUp(e) {
         let action = this._actions[e.keyCode] || '',
             index  = this._queue.indexOf(action);
 
@@ -45,14 +39,18 @@ export default class PlayerCtrl {
         }
     }
 
+    setKeyActions(config) {
+        eachOf(config, this._setKeyTo.bind(this));
+    }
+
     addToStage(config) {
         this.sprite = this.game.add.sprite(config.x, config.y, 'test');
 
         this.game.physics.arcade.enable(this.sprite);
         this.game.camera.follow(this.sprite);
 
-        this.game.input.keyboard.onDownCallback = this.onKeyDown.bind(this);
-        this.game.input.keyboard.onUpCallback   = this.onKeyUp.bind(this);
+        this.game.input.keyboard.onDownCallback = this._onKeyDown.bind(this);
+        this.game.input.keyboard.onUpCallback   = this._onKeyUp.bind(this);
     }
 
     update() {
